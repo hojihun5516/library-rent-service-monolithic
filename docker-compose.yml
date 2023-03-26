@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  database:
+    container_name: mysql_db
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: library
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: 0000
+      MYSQL_USER: library_user
+      MYSQL_PASSWORD: library_password
+      TZ: 'Asia/Seoul'
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./mysql/conf.d:/etc/mysql/conf.d
+    command:
+      - "mysqld"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    networks:
+      - library_network
+
+  application:
+    container_name: docker-compose-test
+    restart: on-failure
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_db:13306/library?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: "library_user"
+      SPRING_DATASOURCE_PASSWORD: "library_password"
+    depends_on:
+      - database
+    networks:
+      - library_network
+
+networks:
+  library_network:
